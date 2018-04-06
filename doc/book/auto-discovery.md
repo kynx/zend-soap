@@ -222,3 +222,21 @@ $autodiscover->setBindingStyle([
 $autodiscover->addFunction('myfunc1');
 $wsdl = $autodiscover->generate();
 ```
+
+## Changing the targetNamespace
+
+By default the generated WSDL contains a targetNamespace attribute set the
+same value given to `setUri()`. If the same service is available on different
+URLs - for instance, when moving from staging to production environments - it
+can be helpful to clients to keep the targetNamespace the same:
+
+```php
+$autodiscover = new Zend\Soap\Autodiscover();
+$autodiscover->setUri('https://staging.example.com/server.php');
+$sutodiscover->setTargetNamespace('urn:example:soap/v1');
+
+// ... then in production
+$autodiscover = new Zend\Soap\Autodiscover();
+$autodiscover->setUri('https://production.example.com/server.php');
+$sutodiscover->setTargetNamespace('urn:example:soap/v1');
+```

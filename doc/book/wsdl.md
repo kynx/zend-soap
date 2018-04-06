@@ -9,7 +9,7 @@ documents.
 
 ## Instantiation
 
-The `Zend\Soap\Wsdl` constructor takes three parameters:
+The `Zend\Soap\Wsdl` constructor takes four parameters:
 
 - `$name` - name of the web service being described.
 - `$uri` - URI where the WSDL will be available (could also be a reference to
@@ -17,8 +17,12 @@ The `Zend\Soap\Wsdl` constructor takes three parameters:
 - `$strategy` - optional flag used to identify the strategy for complex types
   (objects) detection.  To read more on complex type detection strategies go to
   the section on [adding complex types](#adding-complex-type-information).
-- `$classMap` - Optional array of class name translations from PHP Type (key) to
+- `$classMap` - optional array of class name translations from PHP Type (key) to
   WSDL type (value).
+- `$targetNamespace` - optional URI specifying the target namespace of the 
+  document. If absent this will default to the `$uri`. Setting a target 
+  namespace independently of the URI can aide clients moving from staging to 
+  production, when the URL of the service changes.
 
 ## addMessage() method
 
