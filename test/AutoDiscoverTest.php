@@ -1773,6 +1773,17 @@ class AutoDiscoverTest extends TestCase
         $this->documentNodesTest();
     }
 
+    public function testEmptyTargetNamespaceThrowsException()
+    {
+        $server = new AutoDiscover();
+
+        $this->expectException(SoapInvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'targetNamespace is empty'
+        );
+        $server->setTargetNamespace('');
+    }
+
     public function testSetNonStringNonZendUriTargetNamespaceThrowsException()
     {
         $server = new AutoDiscover();
