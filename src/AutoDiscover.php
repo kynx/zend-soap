@@ -573,7 +573,7 @@ class AutoDiscover
             $operation = $wsdl->addBindingOperation($binding, $functionName, $operationBodyStyle);
         }
 
-        $wsdl->addSoapOperation($operation, $targetNamespace . '#' . $functionName);
+        $wsdl->addSoapOperation($operation, $uri . '#' . $functionName);
     }
 
     /**
