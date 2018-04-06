@@ -1558,7 +1558,7 @@ class AutoDiscoverTest extends TestCase
         $this->assertSpecificNodeNumberInXPath(
             1,
             '//wsdl:types/xsd:schema[@targetNamespace="' . $tns . '"]',
-            'Invalid targetNamespace in schema definition'
+            'Wrong targetNamespace in schema definition'
         );
 
         for ($i = 1; $i <= 4; $i++) {
@@ -1567,7 +1567,7 @@ class AutoDiscoverTest extends TestCase
                 '//wsdl:binding[@name="MyServiceBinding"]/wsdl:operation[@name="testFunc'
                 . $i . '"]/soap:operation[@soapAction="' . $this->defaultServiceUri .
                 '#testFunc' . $i . '"]',
-                'Invalid func' . $i . ' operation action binding definition'
+                'Wrong func' . $i . ' operation action binding soapAcction'
             );
         }
 
@@ -1576,14 +1576,12 @@ class AutoDiscoverTest extends TestCase
             '//wsdl:service[@name="MyServiceService"]/'
             . 'wsdl:port[@name="MyServicePort" and @binding="tns:MyServiceBinding"]/soap:address[@location="'
             . $this->defaultServiceUri . '"]',
-            'Invalid service address definition'
+            'Wrong service address location'
         );
 
         $this->assertValidWSDL($this->dom);
         $this->documentNodesTest();
     }
-
-
 
     public function testSetClassWithDifferentStylesAndTargetNamespace()
     {
@@ -1633,7 +1631,6 @@ class AutoDiscoverTest extends TestCase
             );
         }
 
-
         $this->assertSpecificNodeNumberInXPath(
             1,
             '//wsdl:service[@name="MyServiceService"]/wsdl:port[@name="MyServicePort"'
@@ -1658,8 +1655,6 @@ class AutoDiscoverTest extends TestCase
             $tns,
             $this->dom->documentElement->getAttribute('targetNamespace')
         );
-
-
         $this->assertSpecificNodeNumberInXPath(
             1,
             '//wsdl:binding[@name="MyServiceBinding" and @type="tns:MyServicePort"]/'
@@ -1714,22 +1709,7 @@ class AutoDiscoverTest extends TestCase
         $this->assertSpecificNodeNumberInXPath(
             1,
             '//wsdl:types/xsd:schema[@targetNamespace="' . $tns . '"]',
-            'Wrong targetNamespace in port definition'
-        );
-
-        $this->assertSpecificNodeNumberInXPath(
-            1,
-            '//wsdl:types/xsd:schema[@targetNamespace="' . $tns
-            . '"]/xsd:element[@name="TestFunc"]/xsd:complexType/xsd:sequence/'
-            . 'xsd:element[@name="who" and @type="xsd:string"]',
-            'Wrong targetNamespace in complex type definition'
-        );
-        $this->assertSpecificNodeNumberInXPath(
-            1,
-            '//wsdl:types/xsd:schema[@targetNamespace="' . $tns
-            . '"]/xsd:element[@name="TestFuncResponse"]/xsd:complexType/xsd:sequence'
-            . '/xsd:element[@name="TestFuncResult" and @type="xsd:string"]',
-            'Wrong targetNamespace in complex type definition'
+            'Wrong targetNamespace in schema definition'
         );
 
         $this->assertSpecificNodeNumberInXPath(
@@ -1757,7 +1737,7 @@ class AutoDiscoverTest extends TestCase
             '//wsdl:binding[@name="MyServiceBinding" and @type="tns:MyServicePort"]/'
             . 'wsdl:operation[@name="TestFunc"]/wsdl:output/soap:body[@use="literal" and @namespace="'
             . $tns . '"]',
-            'Wrong namespace in operation input body definition'
+            'Wrong namespace in operation output body definition'
         );
         $this->assertSpecificNodeNumberInXPath(
             1,
@@ -1769,5 +1749,38 @@ class AutoDiscoverTest extends TestCase
 
         $this->assertValidWSDL($this->dom);
         $this->documentNodesTest();
+    }
+
+    /**
+     * @dataProvider dataProviderValidUris
+     */
+    public function testChangingTargetNamespaceAfterGenerationIsPossible(
+        $uri,
+        $expectedUri
+    ) {
+        $this->server->addFunction('\ZendTest\Soap\TestAsset\TestFunc');
+        $wsdl = $this->server->generate();
+        $wsdl->setTargetNamespace($uri);
+
+        $this->assertEquals(
+            $expectedUri,
+            $wsdl->toDomDocument()->documentElement->getAttribute(
+                'targetNamespace'
+            )
+        );
+
+        $this->assertValidWSDL($wsdl->toDomDocument());
+        $this->documentNodesTest();
+    }
+
+    public function testSetNonStringNonZendUriTargetNamespaceThrowsException()
+    {
+        $server = new AutoDiscover();
+
+        $this->expectException(SoapInvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Argument to \Zend\Soap\AutoDiscover::setTargetNamespace should be string or \Zend\Uri\Uri instance.'
+        );
+        $server->setTargetNamespace(["bogus"]);
     }
 }
