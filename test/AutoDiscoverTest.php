@@ -1541,26 +1541,233 @@ class AutoDiscoverTest extends TestCase
         }
     }
 
-    /**
-     * @dataProvider dataProviderValidUris
-     */
-    public function testChangeTargetNamespace($uri, $expectedUri)
+    public function testSetClassWithTargetNamespace()
     {
-        $this->server->setTargetNamespace($uri);
+        $tns = 'urn:uuid:550e8400-e29b-41d4-a716-446655440000';
+        $this->server->setUri($this->defaultServiceUri);
+        $this->server->setTargetNamespace($tns);
+        $this->server->setClass('\ZendTest\Soap\TestAsset\Test');
+
         $this->bindWsdl($this->server->generate());
 
         $this->assertEquals(
-            $expectedUri,
+            $tns,
             $this->dom->documentElement->getAttribute('targetNamespace')
         );
 
-        $this->assertNotEquals(
-            $this->defaultServiceUri,
-            $this->dom->documentElement->getAttribute('targetNamespace')
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:types/xsd:schema[@targetNamespace="' . $tns . '"]',
+            'Invalid targetNamespace in schema definition'
+        );
+
+        for ($i = 1; $i <= 4; $i++) {
+            $this->assertSpecificNodeNumberInXPath(
+                1,
+                '//wsdl:binding[@name="MyServiceBinding"]/wsdl:operation[@name="testFunc'
+                . $i . '"]/soap:operation[@soapAction="' . $this->defaultServiceUri .
+                '#testFunc' . $i . '"]',
+                'Invalid func' . $i . ' operation action binding definition'
+            );
+        }
+
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:service[@name="MyServiceService"]/'
+            . 'wsdl:port[@name="MyServicePort" and @binding="tns:MyServiceBinding"]/soap:address[@location="'
+            . $this->defaultServiceUri . '"]',
+            'Invalid service address definition'
         );
 
         $this->assertValidWSDL($this->dom);
+        $this->documentNodesTest();
+    }
 
+
+
+    public function testSetClassWithDifferentStylesAndTargetNamespace()
+    {
+        $tns = 'urn:uuid:550e8400-e29b-41d4-a716-446655440000';
+        $this->server->setUri($this->defaultServiceUri);
+        $this->server->setTargetNamespace($tns);
+        $this->server->setBindingStyle(
+            ['style'     => 'document',
+             'transport' => $this->defaultServiceUri]
+        );
+        $this->server->setOperationBodyStyle(
+            ['use' => 'literal', 'namespace' => $tns]
+        );
+        $this->server->setClass('\ZendTest\Soap\TestAsset\Test');
+
+        $this->bindWsdl($this->server->generate());
+
+        $this->assertEquals(
+            $tns,
+            $this->dom->documentElement->getAttribute('targetNamespace')
+        );
+
+
+        for ($i = 1; $i <= 4; $i++) {
+            $this->assertSpecificNodeNumberInXPath(
+                1,
+                '//wsdl:binding[@name="MyServiceBinding"]/wsdl:operation[@name="testFunc'
+                . $i . '"]/soap:operation[@soapAction="'
+                . $this->defaultServiceUri . '#testFunc' . $i . '"]',
+                'Test func' . $i . ' binding operation has invalid soapAction'
+            );
+            $this->assertSpecificNodeNumberInXPath(
+                1,
+                '//wsdl:binding[@name="MyServiceBinding"]/wsdl:operation[@name="testFunc'
+                . $i
+                . '"]/wsdl:input/soap:body[@use="literal" and @namespace="'
+                . $tns . '"]',
+                'Test func' . $i . ' binding input message has invalid namespace'
+            );
+            $this->assertSpecificNodeNumberInXPath(
+                1,
+                '//wsdl:binding[@name="MyServiceBinding"]/wsdl:operation[@name="testFunc'
+                . $i
+                . '"]/wsdl:output/soap:body[@use="literal" and @namespace="'
+                . $tns . '"]',
+                'Test func' . $i . ' binding output message has invalid namespace'
+            );
+        }
+
+
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:service[@name="MyServiceService"]/wsdl:port[@name="MyServicePort"'
+            . ' and @binding="tns:MyServiceBinding"]/soap:address[@location="'
+            . $this->defaultServiceUri . '"]',
+            'Service binding address has invalid location'
+        );
+
+        $this->assertValidWSDL($this->dom);
+        $this->documentNodesTest();
+    }
+
+    public function testAddFunctionSimpleWithTargetNamespace()
+    {
+        $tns = 'urn:uuid:550e8400-e29b-41d4-a716-446655440000';
+        $this->server->setUri($this->defaultServiceUri);
+        $this->server->setTargetNamespace($tns);
+        $this->server->addFunction('\ZendTest\Soap\TestAsset\TestFunc');
+        $this->bindWsdl($this->server->generate());
+
+        $this->assertEquals(
+            $tns,
+            $this->dom->documentElement->getAttribute('targetNamespace')
+        );
+
+
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:binding[@name="MyServiceBinding" and @type="tns:MyServicePort"]/'
+            . ' wsdl:operation[@name="TestFunc"]/soap:operation[@soapAction="'
+            . $this->defaultServiceUri . '#TestFunc"]',
+            'Wrong service operation action definition'
+        );
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:binding[@name="MyServiceBinding" and @type="tns:MyServicePort"]/'
+            . 'wsdl:operation[@name="TestFunc"]/wsdl:input/soap:body[@use="encoded" '
+            . 'and @encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" and @namespace="'
+            . $tns . '"]',
+            'Wrong operation input body definition'
+        );
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:binding[@name="MyServiceBinding" and @type="tns:MyServicePort"]/'
+            . 'wsdl:operation[@name="TestFunc"]/wsdl:output/soap:body[@use="encoded"'
+            . 'and @encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" and @namespace="'
+            . $tns . '"]',
+            'Wrong operation output body definition'
+        );
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:service[@name="MyServiceService"]/wsdl:port[@name="MyServicePort"'
+            . ' and @binding="tns:MyServiceBinding"]/soap:address[@location="'
+            . $this->defaultServiceUri . '"]',
+            'Wrong service port definition'
+        );
+
+        $this->assertValidWSDL($this->dom);
+        $this->documentNodesTest();
+    }
+
+    public function testAddFunctionSimpleWithDifferentStyleAndTargetNamespace()
+    {
+        $tns = 'urn:uuid:550e8400-e29b-41d4-a716-446655440000';
+        $this->server->setUri($this->defaultServiceUri);
+        $this->server->setTargetNamespace($tns);
+        $this->server->setBindingStyle(
+            ['style'     => 'document',
+             'transport' => $this->defaultServiceUri]
+        );
+        $this->server->setOperationBodyStyle(
+            ['use' => 'literal', 'namespace' => $tns]
+        );
+        $this->server->addFunction('\ZendTest\Soap\TestAsset\TestFunc');
+        $this->bindWsdl($this->server->generate());
+
+
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:types/xsd:schema[@targetNamespace="' . $tns . '"]',
+            'Wrong targetNamespace in port definition'
+        );
+
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:types/xsd:schema[@targetNamespace="' . $tns
+            . '"]/xsd:element[@name="TestFunc"]/xsd:complexType/xsd:sequence/'
+            . 'xsd:element[@name="who" and @type="xsd:string"]',
+            'Wrong targetNamespace in complex type definition'
+        );
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:types/xsd:schema[@targetNamespace="' . $tns
+            . '"]/xsd:element[@name="TestFuncResponse"]/xsd:complexType/xsd:sequence'
+            . '/xsd:element[@name="TestFuncResult" and @type="xsd:string"]',
+            'Wrong targetNamespace in complex type definition'
+        );
+
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:binding[@name="MyServiceBinding" and @type="tns:MyServicePort"]/'
+            . 'soap:binding[@style="document" and @transport="' . $this->defaultServiceUri . '"]',
+            'Wrong transport service binding transport definition'
+        );
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:binding[@name="MyServiceBinding" and @type="tns:MyServicePort"]/'
+            . 'wsdl:operation[@name="TestFunc"]/soap:operation[@soapAction="'
+            . $this->defaultServiceUri . '#TestFunc"]',
+            'Wrong soapAction service operation action definition'
+        );
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:binding[@name="MyServiceBinding" and @type="tns:MyServicePort"]/'
+            . 'wsdl:operation[@name="TestFunc"]/wsdl:input/soap:body[@use="literal" and @namespace="'
+            . $tns . '"]',
+            'Wrong namespace in operation input body definition'
+        );
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:binding[@name="MyServiceBinding" and @type="tns:MyServicePort"]/'
+            . 'wsdl:operation[@name="TestFunc"]/wsdl:output/soap:body[@use="literal" and @namespace="'
+            . $tns . '"]',
+            'Wrong namespace in operation input body definition'
+        );
+        $this->assertSpecificNodeNumberInXPath(
+            1,
+            '//wsdl:service[@name="MyServiceService"]/wsdl:port[@name="MyServicePort"'
+            . ' and @binding="tns:MyServiceBinding"]/soap:address[@location="'
+            . $this->defaultServiceUri . '"]',
+            'Wrong location in service port definition'
+        );
+
+        $this->assertValidWSDL($this->dom);
         $this->documentNodesTest();
     }
 }

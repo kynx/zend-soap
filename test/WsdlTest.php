@@ -866,20 +866,60 @@ class WsdlTest extends WsdlTestHelper
         $this->assertEquals(count($element['sequence']), $n);
     }
 
-    /**
-     * @dataProvider dataProviderForURITesting
-     *
-     * @param string $uri
-     * @param string|Uri $expectedUri
-     */
-    public function testSetCustomTargetNamespaceAttribute(
-        $uri,
-        $expectedUri
-    ) {
-        $this->wsdl->setTargetNamespace($uri);
+    public function testSetTargetNamespaceAfterUri()
+    {
+        $tns = 'urn:uuid:550e8400-e29b-41d4-a716-446655440000';
+        $this->wsdl->setTargetNamespace($tns);
+
+        $element = [
+            'name'      => 'MyElement',
+            'sequence'  => [
+                ['name' => 'myString', 'type' => 'string'],
+                ['name' => 'myInt',    'type' => 'int']
+            ]
+        ];
+
+        $this->wsdl->addElement($element);
+
+        $dom = $this->registerNamespaces($this->wsdl->toDomDocument(), $tns);
         $this->documentNodesTest();
 
-        $this->assertEquals($expectedUri, $this->dom->documentElement->getAttribute('targetNamespace'));
-        $this->assertEquals($expectedUri, $this->wsdl->getTargetNamespace());
+        $this->assertEquals($tns, $dom->lookupNamespaceUri('tns'));
+        $this->assertEquals($tns, $dom->documentElement->getAttribute('targetNamespace'));
+        $this->assertEquals($tns, $this->wsdl->getTargetNamespace());
+
+        $nodes = $this->xpath->query(
+            '//wsdl:types/xsd:schema[@targetNamespace="' . $tns . '"]'
+        );
+        $this->assertEquals(1, $nodes->length, 'schema has incorrect targetNamespace');
+    }
+
+    public function testSetTargetNamespaceBeforeUri()
+    {
+        $tns = 'urn:uuid:550e8400-e29b-41d4-a716-446655440000';
+        $this->wsdl->setTargetNamespace($tns);
+        $this->wsdl->setUri($this->defaultServiceUri);
+
+        $element = [
+            'name'      => 'MyElement',
+            'sequence'  => [
+                ['name' => 'myString', 'type' => 'string'],
+                ['name' => 'myInt',    'type' => 'int']
+            ]
+        ];
+
+        $this->wsdl->addElement($element);
+
+        $dom = $this->registerNamespaces($this->wsdl->toDomDocument(), $tns);
+        $this->documentNodesTest();
+
+        $this->assertEquals($tns, $dom->lookupNamespaceUri('tns'));
+        $this->assertEquals($tns, $dom->documentElement->getAttribute('targetNamespace'));
+        $this->assertEquals($tns, $this->wsdl->getTargetNamespace());
+
+        $nodes = $this->xpath->query(
+            '//wsdl:types/xsd:schema[@targetNamespace="' . $tns . '"]'
+        );
+        $this->assertEquals(1, $nodes->length, 'schema has incorrect targetNamespace');
     }
 }
