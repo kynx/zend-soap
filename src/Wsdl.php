@@ -108,7 +108,7 @@ class Wsdl
         }
 
         $this->classMap = $classMap;
-        $this->dom      = $this->getDOMDocument($name, $this->getUri(), $this->getTargetNamespace());
+        $this->dom      = $this->getDOMDocument($name, $this->getUri());
         $this->wsdl     = $this->dom->documentElement;
 
         $this->setComplexTypeStrategy($strategy ?: new Wsdl\ComplexTypeStrategy\DefaultComplexType);
@@ -119,10 +119,9 @@ class Wsdl
      *
      * @param  string $name
      * @param  string $uri
-     * @param  string $targetNamespace
      * @return DOMDocument
      */
-    protected function getDOMDocument($name, $uri = null, $targetNamespace = null)
+    protected function getDOMDocument($name, $uri = null)
     {
         $dom = new DOMDocument();
 
@@ -137,9 +136,8 @@ class Wsdl
         $dom->appendChild($definitions);
 
         $uri = $this->sanitizeUri($uri);
+        $targetNamespace = $this->targetNamespace ? $this->targetNamespace : $uri;
         $this->setAttributeWithSanitization($definitions, 'name', $name);
-
-        $targetNamespace = ($this->targetNamespace) ? $this->sanitizeUri($this->targetNamespace) : $uri;
         $this->setAttributeWithSanitization($definitions, 'targetNamespace', $targetNamespace);
 
         $definitions->setAttributeNS(self::XML_NS_URI, 'xmlns:'. self::WSDL_NS, self::WSDL_NS_URI);
@@ -163,7 +161,6 @@ class Wsdl
         if ($this->wsdl !== null) {
             $targetNamespace = $this->wsdl->getAttribute('targetNamespace');
         }
-
         return $targetNamespace;
     }
 
@@ -741,8 +738,7 @@ class Wsdl
             $this->schema = $this->dom->createElementNS(WSDL::XSD_NS_URI, 'schema');
             $types->appendChild($this->schema);
 
-            $targetNamespace = ($this->targetNamespace) ? $this->targetNamespace : $this->getUri();
-            $this->setAttributeWithSanitization($this->schema, 'targetNamespace', $targetNamespace);
+            $this->setAttributeWithSanitization($this->schema, 'targetNamespace', $this->getTargetNamespace());
         }
 
         return $this;
