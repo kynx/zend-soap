@@ -88,6 +88,7 @@ class Wsdl
      * @param  string|Uri $uri URI where the WSDL will be available
      * @param  null|ComplexTypeStrategy $strategy Strategy for detection of complex types
      * @param  null|array $classMap Map of PHP Class names to WSDL QNames
+     * @param  null|string|Uri Target namespace for documents (defaults to $uri)
      * @throws Exception\RuntimeException
      */
     public function __construct(
@@ -102,12 +103,9 @@ class Wsdl
         }
 
         $this->setUri($uri);
-
-        if (! $targetNamespace) {
-            $targetNamespace = $uri;
+        if ($targetNamespace !== null) {
+            $this->setTargetNamespace($targetNamespace);
         }
-
-        $this->setTargetNamespace($targetNamespace);
 
         $this->classMap = $classMap;
         $this->dom      = $this->getDOMDocument($name, $this->getUri(), $this->getTargetNamespace());
@@ -161,11 +159,12 @@ class Wsdl
      */
     public function getTargetNamespace()
     {
+        $targetNamespace = null;
         if ($this->wsdl !== null) {
-            $this->targetNamespace = $this->wsdl->getAttribute('targetNamespace');
+            $targetNamespace = $this->wsdl->getAttribute('targetNamespace');
         }
 
-        return $this->targetNamespace;
+        return $targetNamespace;
     }
 
     /**
@@ -206,16 +205,21 @@ class Wsdl
 
         $oldUri = $this->uri;
         $this->uri = $uri;
+        $targetNamespace = $this->targetNamespace ?? $uri;
 
         if ($this->dom instanceof DOMDocument) {
             // namespace declarations are NOT true attributes so one must explicitly set on root element
             //                                                                  xmlns:tns = $uri
-            $this->dom->documentElement->setAttributeNS(self::XML_NS_URI, self::XML_NS . ':' . self::TYPES_NS, $uri);
+            $this->dom->documentElement->setAttributeNS(
+                self::XML_NS_URI,
+                self::XML_NS . ':' . self::TYPES_NS,
+                $targetNamespace
+            );
 
             $xpath = new DOMXPath($this->dom);
             $xpath->registerNamespace('default', self::WSDL_NS_URI);
 
-            $xpath->registerNamespace(self::TYPES_NS, $uri);
+            $xpath->registerNamespace(self::TYPES_NS, $targetNamespace);
             $xpath->registerNamespace(self::SOAP_11_NS, self::SOAP_11_NS_URI);
             $xpath->registerNamespace(self::SOAP_12_NS, self::SOAP_12_NS_URI);
             $xpath->registerNamespace(self::XSD_NS, self::XSD_NS_URI);
@@ -957,6 +961,11 @@ class Wsdl
         if ($this->dom instanceof DOMDocument) {
             $definitions = $this->dom->firstChild;
             $this->setAttributeWithSanitization($definitions, 'targetNamespace', $this->targetNamespace);
+            $this->dom->documentElement->setAttributeNS(
+                self::XML_NS_URI,
+                self::XML_NS . ':' . self::TYPES_NS,
+                $this->targetNamespace
+            );
         }
 
         return $this;
