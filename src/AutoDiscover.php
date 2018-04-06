@@ -638,7 +638,7 @@ class AutoDiscover
      */
     public function setTargetNamespace($uri)
     {
-        if (!is_string($uri) && !($uri instanceof Uri\Uri)) {
+        if (! is_string($uri) && ! $uri instanceof Uri\Uri) {
             throw new Exception\InvalidArgumentException(
                 'Argument to \Zend\Soap\AutoDiscover::setTargetNamespace should be string or \Zend\Uri\Uri instance.'
             );

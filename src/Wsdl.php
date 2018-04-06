@@ -103,7 +103,7 @@ class Wsdl
 
         $this->setUri($uri);
 
-        if (!$targetNamespace) {
+        if (! $targetNamespace) {
             $targetNamespace = $uri;
         }
 
