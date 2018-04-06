@@ -877,7 +877,7 @@ class WsdlTest extends WsdlTestHelper
         $expectedUri
     ) {
         $this->wsdl->setTargetNamespace($uri);
-        $this->testDocumentNodes();
+        $this->documentNodesTest();
 
         $this->assertEquals($expectedUri, $this->dom->documentElement->getAttribute('targetNamespace'));
         $this->assertEquals($expectedUri, $this->wsdl->getTargetNamespace());

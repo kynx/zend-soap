@@ -1561,6 +1561,6 @@ class AutoDiscoverTest extends TestCase
 
         $this->assertValidWSDL($this->dom);
 
-        $this->testDocumentNodes();
+        $this->documentNodesTest();
     }
 }
