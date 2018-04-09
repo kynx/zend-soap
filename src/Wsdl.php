@@ -715,6 +715,9 @@ class Wsdl
             case 'date':
                 return self::XSD_NS . ':date';
 
+            case 'datetime':
+                return self::XSD_NS . ':dateTime';
+
             case 'void':
                 return '';
 
